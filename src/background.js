@@ -17,13 +17,13 @@
  */
 
 var HASH_COMMAND = "hash";
-var ADD_LISTENER_TO_A_TAGS = "processATags";
+var PAGE_FULLY_LOADED_ACTION = "init";
 // currentAndNextmap/[tabId]/[currentUrl] map to clicked
 var currentAndNextmap = new Object();
 
 function onPageFullyLoadedHandler(details) {
     chrome.tabs.sendMessage(details.tabId, {
-        command : ADD_LISTENER_TO_A_TAGS,
+        command : PAGE_FULLY_LOADED_ACTION,
         lastClicked : currentAndNextmap.hasOwnProperty(details.tabId) && 
                       currentAndNextmap[details.tabId].hasOwnProperty(details.url)?
                       currentAndNextmap[details.tabId][details.url]:null
@@ -48,7 +48,13 @@ chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
     delete currentAndNextmap[tabId];
 });
 
-// TODO clean up multiple highlights.
+// TODO clean up multiple highlights.-- done
+// TODO deal with open on a new tab event -- done, same as above
+// TODO bug: when the link is(seemingly the case) javascript function call, 
+// the original function call is ignored. This could be caused by the change of the
+// dom hierachy, which messes up the class hierachy, which messes javascript event trigger.
+// thoughts: don't use <font>, instead, create a class whose name is arbitrary and unique. could use some hash function with some private key.
+// then define the class.
+ // see http://stackoverflow.com/questions/1720320/how-to-dynamically-create-css-class-in-javascript-and-apply
 
-// TODO deal with open on a new tab event 
 // TODO ability to disable highlights. toggle as browser action.

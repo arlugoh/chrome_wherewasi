@@ -17,11 +17,9 @@
  */
 
 var HASH_COMMAND = "hash";
-var ADD_LISTENER_TO_A_TAGS = "processATags";
-
-var highlightStartTag = "<font style='color:white; background-color:green;'>";
-var highlightEndTag = "</font>";
-
+var PAGE_FULLY_LOADED_ACTION = "init";
+var highlightCssClass='ljbalahbababah';
+var highlightCssClassRegex = RegExp(highlightCssClass);
 var curHighlighted;
 
 function sendMsgToBackGround(clicked){
@@ -33,17 +31,15 @@ function sendMsgToBackGround(clicked){
 }
 
 function highlight(linkObject){
-    // When user open new tab, we just need to highlight the clicked link
-    linkObject["innerHTML"]=highlightStartTag + linkObject["innerHTML"] + highlightEndTag;
+    linkObject.className += ' '+highlightCssClass;
+    curHighlighted = linkObject;
 }
+
 function deHighlight(linkObject){
-    linkObject["innerHTML"]=linkObject.firstChild["innerHTML"];
+    linkObject.className = linkObject.className.replace(highlightCssClassRegex,'');
 }
 
 function addATagEventAndHighlightLastClicked(request) {
-    if(request.command != ADD_LISTENER_TO_A_TAGS){
-        return;
-    }
     var links = document.getElementsByTagName("a");
     for ( var i = 0; i < links.length; i++) {
 //        var link = links[i];
@@ -51,18 +47,22 @@ function addATagEventAndHighlightLastClicked(request) {
         links[i].addEventListener("click", function() {
             if(curHighlighted!=null)
                 deHighlight(curHighlighted);
-            curHighlighted = this;
             sendMsgToBackGround(this.href);
             // It could happen that the new link is opened as a new tab. so highlight it before leaving anyway.
             highlight(this);
         }, false);
         if (request.lastClicked != null && links[i]["href"] == request.lastClicked) {
             highlight(links[i]);
-            curHighlighted = links[i];
         }
     }
 };
 
 chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
+    if(request.command === PAGE_FULLY_LOADED_ACTION){
+        var style = document.createElement('style');
+        style.type = 'text/css';
+        style.innerHTML = '.'+highlightCssClass+' { color:white; background-color:green; }';
+        document.getElementsByTagName('head')[0].appendChild(style);
         addATagEventAndHighlightLastClicked(request);
+    }
 });
