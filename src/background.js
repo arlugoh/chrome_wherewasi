@@ -16,18 +16,14 @@
  * @author LJ sdlockloo@gmail.com
  */
 
-var HASH_COMMAND = "hash";
-var PAGE_FULLY_LOADED_ACTION = "init";
 // currentAndNextmap/[tabId]/[currentUrl] map to clicked
 var currentAndNextmap = new Object();
 
 function onPageFullyLoadedHandler(details) {
-    chrome.tabs.sendMessage(details.tabId, {
-        command : PAGE_FULLY_LOADED_ACTION,
-        lastClicked : currentAndNextmap.hasOwnProperty(details.tabId) && 
-                      currentAndNextmap[details.tabId].hasOwnProperty(details.url)?
-                      currentAndNextmap[details.tabId][details.url]:null
-    }, function(response) {// do nothing
+    msg=new MessageSpec(PAGE_FULLY_LOADED_ACTION,currentAndNextmap.hasOwnProperty(details.tabId) && 
+            currentAndNextmap[details.tabId].hasOwnProperty(details.url)?
+                    currentAndNextmap[details.tabId][details.url]:null);
+    chrome.tabs.sendMessage(details.tabId, msg, function(response) {// do nothing
     });
 }
 
@@ -39,7 +35,7 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
         if(typeof currentAndNextmap[tabId]=="undefined"){
             currentAndNextmap[tabId] = new Object();
         }
-        currentAndNextmap[tabId][request.currentUrl] = request.clicked;
+        currentAndNextmap[tabId][request.content.currUrl] = request.content.clickedUrlObj;
     }
 });
 

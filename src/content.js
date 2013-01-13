@@ -16,18 +16,43 @@
  * @author LJ sdlockloo@gmail.com
  */
 
-var HASH_COMMAND = "hash";
-var PAGE_FULLY_LOADED_ACTION = "init";
 var highlightCssClass='ljbalahbababah';
 var highlightCssClassRegex = RegExp(highlightCssClass);
 var curHighlighted;
 
-function sendMsgToBackGround(clicked){
-    chrome.extension.sendMessage({
-        clicked : clicked,
-        currentUrl : document.URL,
-        command: HASH_COMMAND
+(function init(){
+    String.prototype.lj_format = function() {
+        var args = arguments;
+        return this.replace(/{(\d+)}/g, function(match, number) { 
+          return typeof args[number] != 'undefined'
+            ? args[number]
+            : match
+          ;
         });
+      };
+})();
+
+chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
+    if(request.command === PAGE_FULLY_LOADED_ACTION){
+        addCSSStyle();
+        addATagEventAndHighlightLastClicked(request);
+    }
+});
+
+function addCSSStyle(){
+    var style = document.createElement('style');
+    style.type = 'text/css';
+    style.innerHTML = ("@-webkit-keyframes {0} {from { opacity: 1.0; } to { opacity: 0.0; background-color:green;} } .{1} {-webkit-animation-name: {0};"+
+    " -webkit-animation-iteration-count: 3; -webkit-animation-timing-function: cubic-bezier(1.0,0,0,1.0);  -webkit-animation-duration: 1s; }")
+    .lj_format(highlightCssClass+"_blink_animation", highlightCssClass);
+    document.getElementsByTagName('head')[0].appendChild(style);
+}
+
+function sendMsgToBackGround(clicked){
+    urlobj = _lj.createUrlObjForAnchorElem(clicked);
+    clickTrack = new ClickTrack(document.URL, urlobj);
+    msg = new MessageSpec(HASH_COMMAND,clickTrack);
+    chrome.extension.sendMessage(msg);
 }
 
 function highlight(linkObject){
@@ -41,28 +66,20 @@ function deHighlight(linkObject){
 
 function addATagEventAndHighlightLastClicked(request) {
     var links = document.getElementsByTagName("a");
+    var urlObj=request.content;
+    var currLinkObj;
     for ( var i = 0; i < links.length; i++) {
-//        var link = links[i];
-        // console.log("found "+link.href);
         links[i].addEventListener("click", function() {
             if(curHighlighted!=null)
                 deHighlight(curHighlighted);
-            sendMsgToBackGround(this.href);
-            // It could happen that the new link is opened as a new tab. so highlight it before leaving anyway.
+            sendMsgToBackGround(this);
+            // highlight before leaving the page.
             highlight(this);
         }, false);
-        if (request.lastClicked != null && links[i]["href"] == request.lastClicked) {
+        currLinkObj = _lj.createUrlObjForAnchorElem(links[i]);
+        if (urlObj != null && currLinkObj.equals(urlObj)) {
             highlight(links[i]);
         }
     }
 };
 
-chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
-    if(request.command === PAGE_FULLY_LOADED_ACTION){
-        var style = document.createElement('style');
-        style.type = 'text/css';
-        style.innerHTML = '.'+highlightCssClass+' { color:white; background-color:green; }';
-        document.getElementsByTagName('head')[0].appendChild(style);
-        addATagEventAndHighlightLastClicked(request);
-    }
-});
