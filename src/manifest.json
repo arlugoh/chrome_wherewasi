@@ -1,6 +1,10 @@
+/*
+ * 
+ * Batch Icon is created by @adamwhitcroft. See details http://adamwhitcroft.com/batch/
+ */
 {
   "name": "WhereWasI",
-  "description": "todo",
+  "description": "Locate last link you clicked on the current page.",
   "version": "0.0.0.1",
   "manifest_version": 2,
   "icons": {
@@ -8,11 +12,19 @@
     "48": "batch-icon48.png",
     "16": "batch-icon16.png"
   },
+  "options_page": "options.html",
   "permissions": [
       "webNavigation","tabs","*://*/*"
   ],
+  "browser_action": {
+      "default_icon": {                    // optional
+        "38": "batch-icon38.png",           // optional
+        "19": "batch-icon19.png"
+      },
+      "default_title": "Where Was I?"     // optional; shown in tooltip
+  },
   "background": {
-    "scripts": ["common.js","background.js"]
+    "scripts": ["common.js","dataaccess.js","background.js"]
   },
   "content_scripts": [
   {
