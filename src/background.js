@@ -10,7 +10,7 @@ var currentAndNextmap = new Object();
 var configDao = new ConfigDao();
 
 (function initExtension(){
-    if(typeof configDao.getWhenToTriggerConfig()=="undefined"||!validateLocalStorage()){
+    if(!validateLocalStorage()){
         // default settings 
         configDao.putWhenToTriggerConfig(PER_CLICK);
     }
