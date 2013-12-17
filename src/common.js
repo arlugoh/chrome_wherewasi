@@ -1,6 +1,12 @@
 // global variables.
-var HASH_COMMAND = "hash";
-var PAGE_FULLY_LOADED_ACTION = "init";
+var LINK_CLICKED_SIGNAL = "msg.CToB.linkedClicked";
+var PAGE_LOADED_SIGNAL    = "msg.BToC.pagedLoaded";
+var FLASH_THE_LINK = "msg.BToC.flash";
+
+var ALWAYS_ON="alwaysOn";
+var PER_CLICK = "perClick";
+
+var WHEN_TO_TRIGGER_CONFIG_KEY  = "config.whenToTrigger";
 
 // classes declaration.
 var Coordinate = function(x,y){
@@ -24,8 +30,8 @@ var ClickTrack=function(currUrl, clickedUrlObj ){
     this.clickedUrlObj = clickedUrlObj ;
 }
 
-var MessageSpec=function(command, content){
-    this.command=command;
+var MessageSpec=function(whatsup, content){
+    this.whatsup=whatsup;
     this.content=content;
 }
 
@@ -33,14 +39,15 @@ var MessageSpec=function(command, content){
 var _lj={
     // by meouw and animuson from http://stackoverflow.com/questions/442404/dynamically-retrieve-the-position-x-y-of-an-html-element
     findPos : function(el) {
-        var _x = 0;
-        var _y = 0;
-        while( el && !isNaN( el.offsetLeft ) && !isNaN( el.offsetTop ) ) {
-            _x += el.offsetLeft - el.scrollLeft;
-            _y += el.offsetTop - el.scrollTop;
-            el = el.offsetParent;
-        }
-        return new Coordinate(_x , _y);
+//        var _x = 0;
+//        var _y = 0;
+//        while( el && !isNaN( el.offsetLeft ) && !isNaN( el.offsetTop ) ) {
+//            _x += el.offsetLeft - el.scrollLeft;
+//            _y += el.offsetTop - el.scrollTop;
+//            el = el.offsetParent;
+//        }
+//        return new Coordinate(_x , _y);
+        return new Coordinate(el.documentOffsetLeft, el.documentOffsetTop);
     },
     createUrlObjForAnchorElem : function(anchorElem){
         var xy =_lj.findPos(anchorElem);

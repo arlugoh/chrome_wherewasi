@@ -1,24 +1,26 @@
 /**
  *  WhereWasI , a Chrome extension.
  *  
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- * 
  * @author LJ sdlockloo@gmail.com
  */
 
-var highlightCssClass='ljbalahbababah';
+var highlightCssClass='ljbalahbababah'; // yep, that's a pretty unique name.
 var highlightCssClassRegex = RegExp(highlightCssClass);
-var curHighlighted;
+var curWhereWasI;
+var whenToTriggerconfig;
+
+// http://stackoverflow.com/questions/442404/dynamically-retrieve-the-position-x-y-of-an-html-element by ThinkingStiff
+window.Object.defineProperty( Element.prototype, 'documentOffsetTop', {
+    get: function () { 
+        return this.offsetTop + ( this.offsetParent ? this.offsetParent.documentOffsetTop : 0 );
+    }
+} );
+
+window.Object.defineProperty( Element.prototype, 'documentOffsetLeft', {
+    get: function () { 
+        return this.offsetLeft + ( this.offsetParent ? this.offsetParent.documentOffsetLeft : 0 );
+    }
+} );
 
 (function init(){
     String.prototype.lj_format = function() {
@@ -33,9 +35,10 @@ var curHighlighted;
 })();
 
 chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
-    if(request.command === PAGE_FULLY_LOADED_ACTION){
-        addCSSStyle();
-        addATagEventAndHighlightLastClicked(request);
+    if(request.whatsup === PAGE_LOADED_SIGNAL){
+        initPage(request);
+    } else if(request.whatsup === FLASH_THE_LINK){
+        flashTheTargetAgain();
     }
 });
 
@@ -43,7 +46,7 @@ function addCSSStyle(){
     var style = document.createElement('style');
     style.type = 'text/css';
     style.innerHTML = ("@-webkit-keyframes {0} {from { opacity: 1.0; } to { opacity: 0.0; background-color:green;} } .{1} {-webkit-animation-name: {0};"+
-    " -webkit-animation-iteration-count: 3; -webkit-animation-timing-function: cubic-bezier(1.0,0,0,1.0);  -webkit-animation-duration: 1s; }")
+    " -webkit-animation-iteration-count: 2; -webkit-animation-timing-function: cubic-bezier(1.0,0,0,1.0);  -webkit-animation-duration: 1s; }")
     .lj_format(highlightCssClass+"_blink_animation", highlightCssClass);
     document.getElementsByTagName('head')[0].appendChild(style);
 }
@@ -51,35 +54,56 @@ function addCSSStyle(){
 function sendMsgToBackGround(clicked){
     urlobj = _lj.createUrlObjForAnchorElem(clicked);
     clickTrack = new ClickTrack(document.URL, urlobj);
-    msg = new MessageSpec(HASH_COMMAND,clickTrack);
+    msg = new MessageSpec(LINK_CLICKED_SIGNAL,clickTrack);
     chrome.extension.sendMessage(msg);
 }
 
 function highlight(linkObject){
     linkObject.className += ' '+highlightCssClass;
-    curHighlighted = linkObject;
 }
 
 function deHighlight(linkObject){
     linkObject.className = linkObject.className.replace(highlightCssClassRegex,'');
 }
 
+function flashTheTargetAgain(){
+    if(typeof curWhereWasI=="undefined" || curWhereWasI==null)
+        return;
+//    var rect = curWhereWasI.getBoundingClientRect();
+    window.scrollTo(0,curWhereWasI.documentOffsetTop-window.innerHeight/9);
+    var newOne = curWhereWasI.cloneNode(true);
+    deHighlight(newOne);
+    highlight(newOne);
+    curWhereWasI.parentNode.replaceChild(newOne, curWhereWasI);
+    curWhereWasI = newOne;
+}
+
 function addATagEventAndHighlightLastClicked(request) {
     var links = document.getElementsByTagName("a");
-    var urlObj=request.content;
+    var urlObj=request.content.urlObj;
+    whenToTriggerconfig = request.content[WHEN_TO_TRIGGER_CONFIG_KEY];
     var currLinkObj;
     for ( var i = 0; i < links.length; i++) {
         links[i].addEventListener("click", function() {
-            if(curHighlighted!=null)
-                deHighlight(curHighlighted);
+            if(curWhereWasI!=null)
+                deHighlight(curWhereWasI);
             sendMsgToBackGround(this);
             // highlight before leaving the page.
-            highlight(this);
+            if(whenToTriggerconfig !=null && whenToTriggerconfig==ALWAYS_ON){
+                highlight(this);
+            }
         }, false);
         currLinkObj = _lj.createUrlObjForAnchorElem(links[i]);
         if (urlObj != null && currLinkObj.equals(urlObj)) {
-            highlight(links[i]);
+            curWhereWasI = links[i];
+            if(whenToTriggerconfig !=null && whenToTriggerconfig==ALWAYS_ON){
+                highlight(links[i]);
+            }
         }
     }
-};
+}
 
+function initPage(request){
+    addCSSStyle();
+    addATagEventAndHighlightLastClicked(request);
+}
