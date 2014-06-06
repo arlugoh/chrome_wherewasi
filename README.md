@@ -8,3 +8,8 @@ With WhereWasI? chrome extension, you can Locate the last link you clicked on th
 Try it now!
 
 Disclaimer: the 4-arrow converging icon of this chrome extension, or the WhereWasI? icon, was created by @adamwhitcroft. See details at Batch Icon  http://adamwhitcroft.com/batch/
+
+
+Licience
+================
+GNU General Public License (http://www.gnu.org/copyleft/gpl.html)
